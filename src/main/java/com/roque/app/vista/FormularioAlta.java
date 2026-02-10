@@ -7,10 +7,9 @@ package com.roque.app.vista;
 import com.roque.app.modelo.GeneradorXML;
 import com.roque.app.util.Base64Util;
 import com.roque.app.util.ZipUtil;
-import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.GridBagLayout;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 
 /**
  *
@@ -18,7 +17,7 @@ import javax.swing.JPanel;
  */
 public class FormularioAlta extends javax.swing.JFrame {
     
-    FondoPanel fondo = new FondoPanel();
+    private final FondoPanel fondo = new FondoPanel();
 
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(FormularioAlta.class.getName());
@@ -29,16 +28,18 @@ public class FormularioAlta extends javax.swing.JFrame {
     public FormularioAlta() {
         initComponents();
 
-    this.setContentPane(fondo);
-    fondo.setLayout(new BorderLayout());
+        this.setContentPane(fondo);
+        fondo.setLayout(new GridBagLayout());
 
-    JPanel panelCentrador = new JPanel(new GridBagLayout());
-    panelCentrador.setOpaque(false); // deja ver el fondo
+        panelFormulario.setPreferredSize(new Dimension(420, 340));
+        panelFormulario.setMinimumSize(new Dimension(420, 340));
 
-    fondo.add(panelCentrador, BorderLayout.CENTER);
-    panelCentrador.add(panelFormulario); // AQUÍ se centra
+        fondo.add(panelFormulario);
 
-    aplicarEstilos();
+        setMinimumSize(new Dimension(900, 600));
+        setLocationRelativeTo(null);
+
+        aplicarEstilos();
     }
 
 
