@@ -280,11 +280,11 @@ public class FormularioAlta extends javax.swing.JFrame {
     txtTitulo.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 22));
 
     // ===== LABELS =====
-    jLabel1.setForeground(java.awt.Color.WHITE);
-    jLabel2.setForeground(java.awt.Color.WHITE);
-    jLabel3.setForeground(java.awt.Color.WHITE);
-    jLabel4.setForeground(java.awt.Color.WHITE);
-    jLabel5.setForeground(java.awt.Color.WHITE);
+    jLabel1.setForeground(java.awt.Color.BLACK);
+    jLabel2.setForeground(java.awt.Color.BLACK);
+    jLabel3.setForeground(java.awt.Color.BLACK);
+    jLabel4.setForeground(java.awt.Color.BLACK);
+    jLabel5.setForeground(java.awt.Color.BLACK);
 
     jLabel1.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 13));
     jLabel2.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 13));
