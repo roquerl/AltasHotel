@@ -16,17 +16,31 @@ import javax.swing.JPanel;
  */
 public class FondoPanel extends JPanel{
     
-    private Image imagen;
+    private final Image imagen;
+
+    public FondoPanel() {
+        URL url = getClass().getResource("/hotel_fondo.jpg");
+        imagen = url != null ? new ImageIcon(url).getImage() : null;
+    }
 
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        URL url = getClass().getResource("/hotel_fondo.jpg");
+        if (imagen != null) {
+            int anchoPanel = getWidth();
+            int altoPanel = getHeight();
+            int anchoImagen = imagen.getWidth(this);
+            int altoImagen = imagen.getHeight(this);
 
-        if (url != null) {
-            imagen = new ImageIcon(url).getImage();
-            g.drawImage(imagen, 0, 0, getWidth(), getHeight(), this);
+            double escala = Math.max((double) anchoPanel / anchoImagen, (double) altoPanel / altoImagen);
+
+            int nuevoAncho = (int) Math.round(anchoImagen * escala);
+            int nuevoAlto = (int) Math.round(altoImagen * escala);
+            int x = (anchoPanel - nuevoAncho) / 2;
+            int y = (altoPanel - nuevoAlto) / 2;
+
+            g.drawImage(imagen, x, y, nuevoAncho, nuevoAlto, this);
         }
     }
 
