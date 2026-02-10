@@ -275,7 +275,7 @@ public class FormularioAlta extends javax.swing.JFrame {
     private void aplicarEstilos() {
 
     // ===== TÍTULO =====
-    txtTitulo.setForeground(java.awt.Color.WHITE);
+    txtTitulo.setForeground(java.awt.Color.BLACK);
     txtTitulo.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
     txtTitulo.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 22));
 
