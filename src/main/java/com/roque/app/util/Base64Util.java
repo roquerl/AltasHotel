@@ -5,6 +5,7 @@
 package com.roque.app.util;
 
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 
@@ -13,15 +14,19 @@ import java.util.Base64;
  * @author roque
  */
 public class Base64Util {
-    
-        public static String convertirZipBase64() throws Exception {
 
-        byte[] zipBytes = Files.readAllBytes(Paths.get("comunicacion.zip"));
+    private static final Path ZIP_PATH = Paths.get("comunicacion.zip");
+    private static final Path TXT_PATH = Paths.get("comunicacion_base64.txt");
+    
+    public static String convertirZipBase64() throws Exception {
+
+        byte[] zipBytes = Files.readAllBytes(ZIP_PATH);
         return Base64.getEncoder().encodeToString(zipBytes);
     }
 
-    public static void guardarTXT(String base64) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    public static void guardarTXT(String base64) throws Exception {
+        Files.writeString(TXT_PATH, base64);
     }
+
 
 }
