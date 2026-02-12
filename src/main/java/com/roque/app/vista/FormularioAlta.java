@@ -11,13 +11,15 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.regex.Pattern;
@@ -26,7 +28,6 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -44,8 +45,8 @@ import javax.swing.text.DocumentFilter;
 
 public class FormularioAlta extends JFrame {
 
+    private static final String CODIGO_ESTABLECIMIENTO = "0000004063";
     private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
-    private static final DateTimeFormatter ISO_DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
     private static final DateTimeFormatter ISO_DATE_TIME_OFFSET = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
     private static final Pattern SOLO_LETRAS = Pattern.compile("^[A-Za-zÁÉÍÓÚáéíóúÑñ\\s]+$");
     private static final Pattern EMAIL_VALIDO = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
@@ -56,10 +57,9 @@ public class FormularioAlta extends JFrame {
     private final JPanel panelFormulario = new JPanel();
     private final JPanel panelPersonas = new JPanel();
 
-    private final JTextField txtCodigoEstablecimiento = new JTextField(15);
     private final JTextField txtReferencia = new JTextField(15);
-    private final JTextField txtFechaEntrada = new JTextField(10);
-    private final JTextField txtFechaSalida = new JTextField(10);
+    private final JSpinner spnFechaEntrada = new JSpinner(new SpinnerDateModel());
+    private final JSpinner spnFechaSalida = new JSpinner(new SpinnerDateModel());
     private final JTextField txtNumPersonas = new JTextField(5);
     private final JTextField txtNumHabitaciones = new JTextField(5);
     private final JComboBox<String> cmbInternet = new JComboBox<>(new String[]{"false", "true"});
@@ -98,10 +98,12 @@ public class FormularioAlta extends JFrame {
         panelFormulario.add(titulo);
         panelFormulario.add(Box.createVerticalStrut(12));
 
-        panelFormulario.add(crearFila("Código establecimiento", txtCodigoEstablecimiento));
+        spnFechaEntrada.setEditor(new JSpinner.DateEditor(spnFechaEntrada, "yyyy-MM-dd"));
+        spnFechaSalida.setEditor(new JSpinner.DateEditor(spnFechaSalida, "yyyy-MM-dd"));
+
         panelFormulario.add(crearFila("Referencia", txtReferencia));
-        panelFormulario.add(crearFila("Fecha entrada (yyyy-MM-dd)", txtFechaEntrada));
-        panelFormulario.add(crearFila("Fecha salida (yyyy-MM-dd)", txtFechaSalida));
+        panelFormulario.add(crearFila("Fecha entrada", spnFechaEntrada));
+        panelFormulario.add(crearFila("Fecha salida", spnFechaSalida));
         panelFormulario.add(crearFila("Num. personas", txtNumPersonas));
         panelFormulario.add(crearFila("Num. habitaciones", txtNumHabitaciones));
         panelFormulario.add(crearFila("Internet", cmbInternet));
@@ -147,7 +149,6 @@ public class FormularioAlta extends JFrame {
 
         limitarNumerico(txtNumPersonas, 3);
         limitarNumerico(txtNumHabitaciones, 3);
-        limitarNumerico(txtCodigoEstablecimiento, 10);
 
         btnAgregarPersona.addActionListener(e -> agregarPersona());
         btnGenerar.addActionListener(e -> generarAlta());
@@ -194,40 +195,49 @@ public class FormularioAlta extends JFrame {
     }
 
     private void validarCabecera() {
-        if (txtCodigoEstablecimiento.getText().isBlank()) {
-            throw new IllegalArgumentException("Código de establecimiento obligatorio");
+        if (txtNumHabitaciones.getText().isBlank()) {
+            throw new IllegalArgumentException("Num. habitaciones obligatorio");
         }
-        LocalDate.parse(txtFechaEntrada.getText(), ISO_DATE);
-        LocalDate.parse(txtFechaSalida.getText(), ISO_DATE);
+        getLocalDate(spnFechaEntrada);
+        getLocalDate(spnFechaSalida);
+    }
+
+    private LocalDate getLocalDate(JSpinner spinner) {
+        Date value = (Date) spinner.getValue();
+        return Instant.ofEpochMilli(value.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
     }
 
     private String construirXml() {
         LocalDate hoy = LocalDate.now();
         Random random = new Random();
 
-        LocalDate entrada = LocalDate.parse(txtFechaEntrada.getText(), ISO_DATE);
-        LocalDate salida = LocalDate.parse(txtFechaSalida.getText(), ISO_DATE);
+        LocalDate entrada = getLocalDate(spnFechaEntrada);
+        LocalDate salida = getLocalDate(spnFechaSalida);
 
-        LocalDateTime fechaEntradaAleatoria = entrada.atTime(LocalTime.of(random.nextInt(24), random.nextInt(60), random.nextInt(60)));
-        OffsetDateTime fechaSalidaAleatoria = salida.atTime(LocalTime.of(random.nextInt(24), random.nextInt(60), random.nextInt(60))).atOffset(ZoneOffset.ofHours(2));
+        OffsetDateTime fechaEntradaAleatoria = entrada
+                .atTime(LocalTime.of(random.nextInt(24), random.nextInt(60), random.nextInt(60)))
+                .atOffset(ZoneOffset.ofHours(2));
+        OffsetDateTime fechaSalidaAleatoria = salida
+                .atTime(LocalTime.of(random.nextInt(24), random.nextInt(60), random.nextInt(60)))
+                .atOffset(ZoneOffset.ofHours(2));
 
         StringBuilder xml = new StringBuilder();
         xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xml.append("<alt:peticion xmlns:alt=\"http://www.neg.hospedajes.mir.es/altaParteHospedaje\">\n");
         xml.append("  <solicitud>\n");
-        xml.append("    <codigoEstablecimiento>").append(txtCodigoEstablecimiento.getText()).append("</codigoEstablecimiento>\n");
+        xml.append("    <codigoEstablecimiento>").append(CODIGO_ESTABLECIMIENTO).append("</codigoEstablecimiento>\n");
         xml.append("    <comunicacion>\n");
         xml.append("      <contrato>\n");
         xml.append("        <referencia>").append(escapeXml(txtReferencia.getText())).append("</referencia>\n");
-        xml.append("        <fechaContrato>").append(hoy).append("</fechaContrato>\n");
-        xml.append("        <fechaEntrada>").append(fechaEntradaAleatoria.format(ISO_DATE_TIME)).append("</fechaEntrada>\n");
+        xml.append("        <fechaContrato>").append(hoy.format(ISO_DATE)).append("</fechaContrato>\n");
+        xml.append("        <fechaEntrada>").append(fechaEntradaAleatoria.format(ISO_DATE_TIME_OFFSET)).append("</fechaEntrada>\n");
         xml.append("        <fechaSalida>").append(fechaSalidaAleatoria.format(ISO_DATE_TIME_OFFSET)).append("</fechaSalida>\n");
         xml.append("        <numPersonas>").append(txtNumPersonas.getText()).append("</numPersonas>\n");
         xml.append("        <numHabitaciones>").append(txtNumHabitaciones.getText()).append("</numHabitaciones>\n");
         xml.append("        <internet>").append(cmbInternet.getSelectedItem()).append("</internet>\n");
         xml.append("        <pago>\n");
         xml.append("          <tipoPago>").append(cmbTipoPago.getSelectedItem()).append("</tipoPago>\n");
-        xml.append("          <fechaPago>").append(hoy).append("</fechaPago>\n");
+        xml.append("          <fechaPago>").append(hoy.format(ISO_DATE)).append("</fechaPago>\n");
         xml.append("        </pago>\n");
         xml.append("      </contrato>\n");
 
@@ -351,9 +361,7 @@ public class FormularioAlta extends JFrame {
         }
 
         String aXml() {
-            String fechaNac = new JFormattedTextField(new java.text.SimpleDateFormat("yyyy-MM-dd")) {{
-                setValue(fechaNacimiento.getValue());
-            }}.getText();
+            LocalDate fechaNac = getLocalDate(fechaNacimiento);
 
             StringBuilder sb = new StringBuilder();
             sb.append("      <persona>\n");
@@ -363,7 +371,7 @@ public class FormularioAlta extends JFrame {
             sb.append("        <apellido2>").append(escapeXml(txtApellido2.getText())).append("</apellido2>\n");
             sb.append("        <tipoDocumento>").append(cmbTipoDocumento.getSelectedItem()).append("</tipoDocumento>\n");
             sb.append("        <numeroDocumento>").append(txtNumeroDocumento.getText()).append("</numeroDocumento>\n");
-            sb.append("        <fechaNacimiento>").append(fechaNac).append("</fechaNacimiento>\n");
+            sb.append("        <fechaNacimiento>").append(fechaNac.format(ISO_DATE)).append("</fechaNacimiento>\n");
             sb.append("        <nacionalidad>").append(escapeXml(txtNacionalidad.getText())).append("</nacionalidad>\n");
             sb.append("        <sexo>").append(cmbSexo.getSelectedItem()).append("</sexo>\n");
             sb.append("        <direccion>\n");
