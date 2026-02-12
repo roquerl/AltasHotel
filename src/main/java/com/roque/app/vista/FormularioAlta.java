@@ -61,8 +61,10 @@ public class FormularioAlta extends JFrame {
     private final JPanel panelPersonas = new JPanel();
 
     private final JTextField txtReferencia = new JTextField(15);
-    private final DatePickerField dateEntrada = new DatePickerField();
-    private final DatePickerField dateSalida = new DatePickerField();
+    private final DatePickerField dateEntrada = new DatePickerField(LocalDate.now().isAfter(LocalDate.of(2026, 1, 1))
+            ? LocalDate.now() : LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1), LocalDate.of(2100, 12, 31));
+    private final DatePickerField dateSalida = new DatePickerField(LocalDate.now().isAfter(LocalDate.of(2026, 1, 1))
+            ? LocalDate.now() : LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1), LocalDate.of(2100, 12, 31));
     private final JTextField txtNumPersonas = new JTextField(5);
     private final JTextField txtNumHabitaciones = new JTextField(5);
     private final JComboBox<String> cmbInternet = new JComboBox<>(new String[]{"false", "true"});
@@ -198,8 +200,16 @@ public class FormularioAlta extends JFrame {
         if (txtNumHabitaciones.getText().isBlank()) {
             throw new IllegalArgumentException("Num. habitaciones obligatorio");
         }
-        dateEntrada.getDate();
-        dateSalida.getDate();
+        LocalDate entrada = dateToLocalDate(dateEntrada.getDate());
+        LocalDate salida = dateToLocalDate(dateSalida.getDate());
+        LocalDate minimoEntrada = LocalDate.now().isAfter(LocalDate.of(2026, 1, 1))
+                ? LocalDate.now() : LocalDate.of(2026, 1, 1);
+        if (entrada.isBefore(minimoEntrada)) {
+            throw new IllegalArgumentException("La fecha de entrada no puede ser anterior a " + minimoEntrada);
+        }
+        if (salida.isBefore(entrada)) {
+            throw new IllegalArgumentException("La fecha de salida no puede ser anterior a la fecha de entrada");
+        }
     }
 
     private LocalDate dateToLocalDate(Date value) {
@@ -295,7 +305,7 @@ public class FormularioAlta extends JFrame {
         private final JComboBox<String> cmbTipoDocumento = new JComboBox<>(new String[]{"DNI", "NIE"});
         private final JTextField txtNumeroDocumento = new JTextField();
         private final JTextField txtSoporteDocumento = new JTextField();
-        private final DatePickerField dateNacimiento = new DatePickerField();
+        private final DatePickerField dateNacimiento = new DatePickerField(LocalDate.of(2000, 1, 1), LocalDate.of(1800, 1, 1), LocalDate.now());
         private final JComboBox<String> cmbParentesco = new JComboBox<>(new String[]{"", "HJ"});
         private final JTextField txtNacionalidad = new JTextField("ESP");
         private final JComboBox<String> cmbSexo = new JComboBox<>(new String[]{"H", "M"});
@@ -403,11 +413,15 @@ public class FormularioAlta extends JFrame {
     private static class DatePickerField extends JPanel {
         private final JTextField txtFecha = new JTextField();
         private final JButton btnCalendario = new JButton("📅");
+        private final LocalDate minDate;
+        private final LocalDate maxDate;
 
-        DatePickerField() {
+        DatePickerField(LocalDate initialDate, LocalDate minDate, LocalDate maxDate) {
+            this.minDate = minDate;
+            this.maxDate = maxDate;
             setLayout(new BorderLayout(6, 0));
             txtFecha.setEditable(false);
-            txtFecha.setText(LocalDate.now().format(ISO_DATE));
+            txtFecha.setText(initialDate.format(ISO_DATE));
             add(txtFecha, BorderLayout.CENTER);
             add(btnCalendario, BorderLayout.EAST);
             btnCalendario.addActionListener(e -> abrirSelectorFecha());
@@ -417,11 +431,13 @@ public class FormularioAlta extends JFrame {
             JDialog dialog = new JDialog((Frame) null, "Seleccionar fecha", true);
             dialog.setLayout(new BorderLayout(8, 8));
 
-            LocalDate base = LocalDate.parse(txtFecha.getText(), ISO_DATE);
-            Integer[] years = new Integer[31];
-            int startYear = LocalDate.now().getYear() - 5;
-            for (int i = 0; i < years.length; i++) {
-                years[i] = startYear + i;
+            LocalDate parsed = LocalDate.parse(txtFecha.getText(), ISO_DATE);
+            final LocalDate base = parsed.isBefore(minDate) ? minDate : (parsed.isAfter(maxDate) ? maxDate : parsed);
+
+            int totalYears = maxDate.getYear() - minDate.getYear() + 1;
+            Integer[] years = new Integer[totalYears];
+            for (int i = 0; i < totalYears; i++) {
+                years[i] = minDate.getYear() + i;
             }
 
             JComboBox<Integer> cmbYear = new JComboBox<>(years);
@@ -467,6 +483,11 @@ public class FormularioAlta extends JFrame {
 
             btnOk.addActionListener(e -> {
                 LocalDate selected = LocalDate.of((Integer) cmbYear.getSelectedItem(), (Integer) cmbMonth.getSelectedItem(), (Integer) cmbDay.getSelectedItem());
+                if (selected.isBefore(minDate) || selected.isAfter(maxDate)) {
+                    JOptionPane.showMessageDialog(dialog,
+                            "Fecha fuera de rango permitido (" + minDate + " a " + maxDate + ")");
+                    return;
+                }
                 txtFecha.setText(selected.format(ISO_DATE));
                 dialog.dispose();
             });
@@ -481,6 +502,12 @@ public class FormularioAlta extends JFrame {
 
         Date getDate() {
             LocalDate localDate = LocalDate.parse(txtFecha.getText(), ISO_DATE);
+            if (localDate.isBefore(minDate)) {
+                localDate = minDate;
+            }
+            if (localDate.isAfter(maxDate)) {
+                localDate = maxDate;
+            }
             return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
         }
     }

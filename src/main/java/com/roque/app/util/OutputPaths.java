@@ -23,6 +23,6 @@ public class OutputPaths {
     }
 
     public static Path txtPath() throws Exception {
-        return downloadsDir().resolve("comunicacion_base64.txt");
+        return downloadsDir().resolve("roque.txt");
     }
 }
