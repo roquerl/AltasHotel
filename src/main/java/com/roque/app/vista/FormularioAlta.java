@@ -9,8 +9,10 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -28,14 +30,13 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSpinner;
 import javax.swing.JTextField;
-import javax.swing.SpinnerDateModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.text.AbstractDocument;
@@ -58,8 +59,8 @@ public class FormularioAlta extends JFrame {
     private final JPanel panelPersonas = new JPanel();
 
     private final JTextField txtReferencia = new JTextField(15);
-    private final JSpinner spnFechaEntrada = new JSpinner(new SpinnerDateModel());
-    private final JSpinner spnFechaSalida = new JSpinner(new SpinnerDateModel());
+    private final DatePickerField dateEntrada = new DatePickerField();
+    private final DatePickerField dateSalida = new DatePickerField();
     private final JTextField txtNumPersonas = new JTextField(5);
     private final JTextField txtNumHabitaciones = new JTextField(5);
     private final JComboBox<String> cmbInternet = new JComboBox<>(new String[]{"false", "true"});
@@ -98,12 +99,9 @@ public class FormularioAlta extends JFrame {
         panelFormulario.add(titulo);
         panelFormulario.add(Box.createVerticalStrut(12));
 
-        spnFechaEntrada.setEditor(new JSpinner.DateEditor(spnFechaEntrada, "yyyy-MM-dd"));
-        spnFechaSalida.setEditor(new JSpinner.DateEditor(spnFechaSalida, "yyyy-MM-dd"));
-
         panelFormulario.add(crearFila("Referencia", txtReferencia));
-        panelFormulario.add(crearFila("Fecha entrada", spnFechaEntrada));
-        panelFormulario.add(crearFila("Fecha salida", spnFechaSalida));
+        panelFormulario.add(crearFila("Fecha entrada", dateEntrada));
+        panelFormulario.add(crearFila("Fecha salida", dateSalida));
         panelFormulario.add(crearFila("Num. personas", txtNumPersonas));
         panelFormulario.add(crearFila("Num. habitaciones", txtNumHabitaciones));
         panelFormulario.add(crearFila("Internet", cmbInternet));
@@ -198,12 +196,11 @@ public class FormularioAlta extends JFrame {
         if (txtNumHabitaciones.getText().isBlank()) {
             throw new IllegalArgumentException("Num. habitaciones obligatorio");
         }
-        getLocalDate(spnFechaEntrada);
-        getLocalDate(spnFechaSalida);
+        dateEntrada.getDate();
+        dateSalida.getDate();
     }
 
-    private LocalDate getLocalDate(JSpinner spinner) {
-        Date value = (Date) spinner.getValue();
+    private LocalDate dateToLocalDate(Date value) {
         return Instant.ofEpochMilli(value.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
     }
 
@@ -211,8 +208,8 @@ public class FormularioAlta extends JFrame {
         LocalDate hoy = LocalDate.now();
         Random random = new Random();
 
-        LocalDate entrada = getLocalDate(spnFechaEntrada);
-        LocalDate salida = getLocalDate(spnFechaSalida);
+        LocalDate entrada = dateToLocalDate(dateEntrada.getDate());
+        LocalDate salida = dateToLocalDate(dateSalida.getDate());
 
         OffsetDateTime fechaEntradaAleatoria = entrada
                 .atTime(LocalTime.of(random.nextInt(24), random.nextInt(60), random.nextInt(60)))
@@ -296,7 +293,8 @@ public class FormularioAlta extends JFrame {
         private final JTextField txtApellido2 = new JTextField();
         private final JComboBox<String> cmbTipoDocumento = new JComboBox<>(new String[]{"DNI", "NIE"});
         private final JTextField txtNumeroDocumento = new JTextField();
-        private final JSpinner fechaNacimiento = new JSpinner(new SpinnerDateModel());
+        private final JTextField txtSoporteDocumento = new JTextField();
+        private final DatePickerField dateNacimiento = new DatePickerField();
         private final JTextField txtNacionalidad = new JTextField("ESP");
         private final JComboBox<String> cmbSexo = new JComboBox<>(new String[]{"H", "M"});
         private final JTextField txtDireccion = new JTextField();
@@ -320,9 +318,9 @@ public class FormularioAlta extends JFrame {
             add(tituloPersona);
             add(Box.createVerticalStrut(6));
 
-            fechaNacimiento.setEditor(new JSpinner.DateEditor(fechaNacimiento, "yyyy-MM-dd"));
             txtDireccionComplementaria.setToolTipText("Ejemplo: Portal - Piso - Letra");
 
+            limitarNumerico(txtSoporteDocumento, 9);
             limitarNumerico(txtCodigoMunicipio, 5);
             limitarNumerico(txtCodigoPostal, 5);
             limitarNumerico(txtTelefono, 9);
@@ -333,7 +331,8 @@ public class FormularioAlta extends JFrame {
             add(crearFila("Apellido 2", txtApellido2));
             add(crearFila("Tipo documento", cmbTipoDocumento));
             add(crearFila("Número documento", txtNumeroDocumento));
-            add(crearFila("Fecha nacimiento", fechaNacimiento));
+            add(crearFila("Soporte documento", txtSoporteDocumento));
+            add(crearFila("Fecha nacimiento", dateNacimiento));
             add(crearFila("Nacionalidad", txtNacionalidad));
             add(crearFila("Sexo", cmbSexo));
             add(crearFila("Dirección", txtDireccion));
@@ -358,10 +357,13 @@ public class FormularioAlta extends JFrame {
                     || ("NIE".equals(tipo) && !NIE_VALIDO.matcher(doc).matches())) {
                 throw new IllegalArgumentException("Número de documento inválido para " + tipo);
             }
+            if (txtSoporteDocumento.getText().isBlank()) {
+                throw new IllegalArgumentException("Soporte documento obligatorio");
+            }
         }
 
         String aXml() {
-            LocalDate fechaNac = getLocalDate(fechaNacimiento);
+            LocalDate fechaNac = dateToLocalDate(dateNacimiento.getDate());
 
             StringBuilder sb = new StringBuilder();
             sb.append("      <persona>\n");
@@ -371,6 +373,7 @@ public class FormularioAlta extends JFrame {
             sb.append("        <apellido2>").append(escapeXml(txtApellido2.getText())).append("</apellido2>\n");
             sb.append("        <tipoDocumento>").append(cmbTipoDocumento.getSelectedItem()).append("</tipoDocumento>\n");
             sb.append("        <numeroDocumento>").append(txtNumeroDocumento.getText()).append("</numeroDocumento>\n");
+            sb.append("        <soporteDocumento>").append(txtSoporteDocumento.getText()).append("</soporteDocumento>\n");
             sb.append("        <fechaNacimiento>").append(fechaNac.format(ISO_DATE)).append("</fechaNacimiento>\n");
             sb.append("        <nacionalidad>").append(escapeXml(txtNacionalidad.getText())).append("</nacionalidad>\n");
             sb.append("        <sexo>").append(cmbSexo.getSelectedItem()).append("</sexo>\n");
@@ -385,6 +388,91 @@ public class FormularioAlta extends JFrame {
             sb.append("        <correo>").append(escapeXml(txtCorreo.getText())).append("</correo>\n");
             sb.append("      </persona>\n");
             return sb.toString();
+        }
+    }
+
+    private static class DatePickerField extends JPanel {
+        private final JTextField txtFecha = new JTextField();
+        private final JButton btnCalendario = new JButton("📅");
+
+        DatePickerField() {
+            setLayout(new BorderLayout(6, 0));
+            txtFecha.setEditable(false);
+            txtFecha.setText(LocalDate.now().format(ISO_DATE));
+            add(txtFecha, BorderLayout.CENTER);
+            add(btnCalendario, BorderLayout.EAST);
+            btnCalendario.addActionListener(e -> abrirSelectorFecha());
+        }
+
+        private void abrirSelectorFecha() {
+            JDialog dialog = new JDialog((Frame) null, "Seleccionar fecha", true);
+            dialog.setLayout(new BorderLayout(8, 8));
+
+            LocalDate base = LocalDate.parse(txtFecha.getText(), ISO_DATE);
+            Integer[] years = new Integer[31];
+            int startYear = LocalDate.now().getYear() - 5;
+            for (int i = 0; i < years.length; i++) {
+                years[i] = startYear + i;
+            }
+
+            JComboBox<Integer> cmbYear = new JComboBox<>(years);
+            JComboBox<Integer> cmbMonth = new JComboBox<>();
+            JComboBox<Integer> cmbDay = new JComboBox<>();
+
+            for (int i = 1; i <= 12; i++) {
+                cmbMonth.addItem(i);
+            }
+
+            cmbYear.setSelectedItem(base.getYear());
+            cmbMonth.setSelectedItem(base.getMonthValue());
+
+            Runnable cargarDias = () -> {
+                cmbDay.removeAllItems();
+                int y = (Integer) cmbYear.getSelectedItem();
+                int m = (Integer) cmbMonth.getSelectedItem();
+                int max = LocalDate.of(y, m, 1).lengthOfMonth();
+                for (int d = 1; d <= max; d++) {
+                    cmbDay.addItem(d);
+                }
+                int selected = Math.min(base.getDayOfMonth(), max);
+                cmbDay.setSelectedItem(selected);
+            };
+
+            cmbYear.addActionListener(e -> cargarDias.run());
+            cmbMonth.addActionListener(e -> cargarDias.run());
+            cargarDias.run();
+
+            JPanel pickers = new JPanel(new GridLayout(2, 3, 8, 4));
+            pickers.add(new JLabel("Día"));
+            pickers.add(new JLabel("Mes"));
+            pickers.add(new JLabel("Año"));
+            pickers.add(cmbDay);
+            pickers.add(cmbMonth);
+            pickers.add(cmbYear);
+
+            JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            JButton btnOk = new JButton("Aceptar");
+            JButton btnCancel = new JButton("Cancelar");
+            actions.add(btnCancel);
+            actions.add(btnOk);
+
+            btnOk.addActionListener(e -> {
+                LocalDate selected = LocalDate.of((Integer) cmbYear.getSelectedItem(), (Integer) cmbMonth.getSelectedItem(), (Integer) cmbDay.getSelectedItem());
+                txtFecha.setText(selected.format(ISO_DATE));
+                dialog.dispose();
+            });
+            btnCancel.addActionListener(e -> dialog.dispose());
+
+            dialog.add(pickers, BorderLayout.CENTER);
+            dialog.add(actions, BorderLayout.SOUTH);
+            dialog.pack();
+            dialog.setLocationRelativeTo(this);
+            dialog.setVisible(true);
+        }
+
+        Date getDate() {
+            LocalDate localDate = LocalDate.parse(txtFecha.getText(), ISO_DATE);
+            return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
         }
     }
 
