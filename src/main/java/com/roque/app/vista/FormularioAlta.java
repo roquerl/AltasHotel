@@ -3,6 +3,7 @@ package com.roque.app.vista;
 import com.roque.app.modelo.GeneradorXML;
 import com.roque.app.util.Base64Util;
 import com.roque.app.util.ZipUtil;
+import com.roque.app.util.OutputPaths;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -46,8 +47,9 @@ import javax.swing.text.DocumentFilter;
 
 public class FormularioAlta extends JFrame {
 
-    private static final String CODIGO_ESTABLECIMIENTO = "0000004063";
+    private static final String CODIGO_ESTABLECIMIENTO = "1234567890";
     private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final DateTimeFormatter ISO_DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
     private static final DateTimeFormatter ISO_DATE_TIME_OFFSET = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
     private static final Pattern SOLO_LETRAS = Pattern.compile("^[A-Za-zÁÉÍÓÚáéíóúÑñ\\s]+$");
     private static final Pattern EMAIL_VALIDO = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
@@ -186,7 +188,7 @@ public class FormularioAlta extends JFrame {
             String base64 = Base64Util.convertirZipBase64();
             Base64Util.guardarTXT(base64);
 
-            JOptionPane.showMessageDialog(this, "Comunicación generada correctamente");
+            JOptionPane.showMessageDialog(this, "Comunicación generada correctamente en: " + OutputPaths.xmlPath().getParent());
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }
@@ -211,9 +213,8 @@ public class FormularioAlta extends JFrame {
         LocalDate entrada = dateToLocalDate(dateEntrada.getDate());
         LocalDate salida = dateToLocalDate(dateSalida.getDate());
 
-        OffsetDateTime fechaEntradaAleatoria = entrada
-                .atTime(LocalTime.of(random.nextInt(24), random.nextInt(60), random.nextInt(60)))
-                .atOffset(ZoneOffset.ofHours(2));
+        java.time.LocalDateTime fechaEntradaAleatoria = entrada
+                .atTime(LocalTime.of(random.nextInt(24), random.nextInt(60), random.nextInt(60)));
         OffsetDateTime fechaSalidaAleatoria = salida
                 .atTime(LocalTime.of(random.nextInt(24), random.nextInt(60), random.nextInt(60)))
                 .atOffset(ZoneOffset.ofHours(2));
@@ -227,7 +228,7 @@ public class FormularioAlta extends JFrame {
         xml.append("      <contrato>\n");
         xml.append("        <referencia>").append(escapeXml(txtReferencia.getText())).append("</referencia>\n");
         xml.append("        <fechaContrato>").append(hoy.format(ISO_DATE)).append("</fechaContrato>\n");
-        xml.append("        <fechaEntrada>").append(fechaEntradaAleatoria.format(ISO_DATE_TIME_OFFSET)).append("</fechaEntrada>\n");
+        xml.append("        <fechaEntrada>").append(fechaEntradaAleatoria.format(ISO_DATE_TIME)).append("</fechaEntrada>\n");
         xml.append("        <fechaSalida>").append(fechaSalidaAleatoria.format(ISO_DATE_TIME_OFFSET)).append("</fechaSalida>\n");
         xml.append("        <numPersonas>").append(txtNumPersonas.getText()).append("</numPersonas>\n");
         xml.append("        <numHabitaciones>").append(txtNumHabitaciones.getText()).append("</numHabitaciones>\n");
@@ -295,6 +296,7 @@ public class FormularioAlta extends JFrame {
         private final JTextField txtNumeroDocumento = new JTextField();
         private final JTextField txtSoporteDocumento = new JTextField();
         private final DatePickerField dateNacimiento = new DatePickerField();
+        private final JComboBox<String> cmbParentesco = new JComboBox<>(new String[]{"", "HJ"});
         private final JTextField txtNacionalidad = new JTextField("ESP");
         private final JComboBox<String> cmbSexo = new JComboBox<>(new String[]{"H", "M"});
         private final JTextField txtDireccion = new JTextField();
@@ -341,6 +343,7 @@ public class FormularioAlta extends JFrame {
             add(crearFila("Código postal", txtCodigoPostal));
             add(crearFila("Teléfono", txtTelefono));
             add(crearFila("Correo", txtCorreo));
+            add(crearFila("Parentesco", cmbParentesco));
         }
 
         void validar() {
@@ -386,6 +389,12 @@ public class FormularioAlta extends JFrame {
             sb.append("        </direccion>\n");
             sb.append("        <telefono>").append(txtTelefono.getText()).append("</telefono>\n");
             sb.append("        <correo>").append(escapeXml(txtCorreo.getText())).append("</correo>\n");
+            String parentesco = (String) cmbParentesco.getSelectedItem();
+            if (parentesco == null || parentesco.isBlank()) {
+                sb.append("        <parentesco/>\n");
+            } else {
+                sb.append("        <parentesco>").append(parentesco).append("</parentesco>\n");
+            }
             sb.append("      </persona>\n");
             return sb.toString();
         }

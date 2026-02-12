@@ -1,12 +1,11 @@
 package com.roque.app.modelo;
 
-import java.io.FileWriter;
+import com.roque.app.util.OutputPaths;
+import java.nio.file.Files;
 
 public class GeneradorXML {
 
     public static void generarXML(String contenidoXml) throws Exception {
-        try (FileWriter writer = new FileWriter("comunicacion.xml")) {
-            writer.write(contenidoXml);
-        }
+        Files.writeString(OutputPaths.xmlPath(), contenidoXml);
     }
 }
