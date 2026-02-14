@@ -45,6 +45,10 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 
+/**
+ * Ventana principal para capturar los datos de altas de hospedaje y generar
+ * el XML, ZIP y Base64 requeridos por el flujo de comunicación.
+ */
 public class FormularioAlta extends JFrame {
 
     private static final String CODIGO_ESTABLECIMIENTO = "1234567890";
@@ -74,6 +78,9 @@ public class FormularioAlta extends JFrame {
 
     private final List<PersonaPanel> personas = new ArrayList<>();
 
+    /**
+     * Crea la ventana principal y prepara todos los componentes visuales.
+     */
     public FormularioAlta() {
         configurarVentana();
         construirFormulario();
@@ -81,6 +88,9 @@ public class FormularioAlta extends JFrame {
         agregarPersona();
     }
 
+    /**
+     * Configura propiedades generales de la ventana.
+     */
     private void configurarVentana() {
         setTitle("Reserva de Hotel");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -90,6 +100,9 @@ public class FormularioAlta extends JFrame {
         setLocationRelativeTo(null);
     }
 
+    /**
+     * Construye la estructura visual del formulario y sus listeners.
+     */
     private void construirFormulario() {
         panelFormulario.setLayout(new BoxLayout(panelFormulario, BoxLayout.Y_AXIS));
         panelFormulario.setBorder(BorderFactory.createCompoundBorder(
@@ -156,6 +169,13 @@ public class FormularioAlta extends JFrame {
         btnGenerar.addActionListener(e -> generarAlta());
     }
 
+    /**
+     * Crea una fila estándar compuesta por etiqueta y componente de entrada.
+     *
+     * @param label texto de la etiqueta.
+     * @param input componente de entrada asociado.
+     * @return panel con la fila preparada.
+     */
     private JPanel crearFila(String label, Component input) {
         JPanel fila = new JPanel(new BorderLayout(12, 0));
         fila.setOpaque(false);
@@ -167,6 +187,9 @@ public class FormularioAlta extends JFrame {
         return fila;
     }
 
+    /**
+     * Añade un bloque visual de persona al formulario y actualiza el contador.
+     */
     private void agregarPersona() {
         PersonaPanel persona = new PersonaPanel(personas.size() + 1);
         personas.add(persona);
@@ -177,6 +200,9 @@ public class FormularioAlta extends JFrame {
         panelPersonas.repaint();
     }
 
+    /**
+     * Ejecuta el flujo completo de generación: XML, ZIP, Base64 y guardado final.
+     */
     private void generarAlta() {
         try {
             validarCabecera();
@@ -196,6 +222,9 @@ public class FormularioAlta extends JFrame {
         }
     }
 
+    /**
+     * Valida los datos generales del contrato antes de generar el XML.
+     */
     private void validarCabecera() {
         if (txtNumHabitaciones.getText().isBlank()) {
             throw new IllegalArgumentException("Num. habitaciones obligatorio");
@@ -212,10 +241,21 @@ public class FormularioAlta extends JFrame {
         }
     }
 
+    /**
+     * Convierte una fecha {@link Date} a {@link LocalDate}.
+     *
+     * @param value fecha origen.
+     * @return fecha convertida en zona local.
+     */
     private LocalDate dateToLocalDate(Date value) {
         return Instant.ofEpochMilli(value.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
     }
 
+    /**
+     * Construye el XML completo con el formato oficial requerido.
+     *
+     * @return contenido XML serializado.
+     */
     private String construirXml() {
         LocalDate hoy = LocalDate.now();
         Random random = new Random();
@@ -259,6 +299,12 @@ public class FormularioAlta extends JFrame {
         return xml.toString();
     }
 
+    /**
+     * Escapa caracteres especiales para que el valor sea válido dentro del XML.
+     *
+     * @param value texto de entrada.
+     * @return texto escapado.
+     */
     private static String escapeXml(String value) {
         return value
                 .replace("&", "&amp;")
@@ -268,19 +314,37 @@ public class FormularioAlta extends JFrame {
                 .replace("'", "&apos;");
     }
 
+    /**
+     * Limita un campo de texto a dígitos y una longitud máxima.
+     *
+     * @param field campo a restringir.
+     * @param maxLength longitud máxima permitida.
+     */
     private void limitarNumerico(JTextField field, int maxLength) {
         ((AbstractDocument) field.getDocument()).setDocumentFilter(new RegexFilter("\\d*", maxLength));
     }
 
+    /**
+     * Filtro de documento para aplicar reglas por expresión regular y tamaño máximo.
+     */
     private static class RegexFilter extends DocumentFilter {
         private final Pattern pattern;
         private final int maxLength;
 
+        /**
+         * Crea el filtro de validación.
+         *
+         * @param regex patrón permitido.
+         * @param maxLength longitud máxima total.
+         */
         RegexFilter(String regex, int maxLength) {
             this.pattern = Pattern.compile(regex);
             this.maxLength = maxLength;
         }
 
+        /**
+         * Reemplaza texto validando patrón y longitud.
+         */
         @Override
         public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
             String current = fb.getDocument().getText(0, fb.getDocument().getLength());
@@ -290,12 +354,18 @@ public class FormularioAlta extends JFrame {
             }
         }
 
+        /**
+         * Inserta texto aplicando la misma validación que en reemplazo.
+         */
         @Override
         public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
             replace(fb, offset, 0, string, attr);
         }
     }
 
+    /**
+     * Subformulario con los datos de una persona hospedada.
+     */
     private class PersonaPanel extends JPanel {
 
         private final JComboBox<String> cmbRol = new JComboBox<>(new String[]{"VIP", "TURISTA"});
@@ -316,6 +386,11 @@ public class FormularioAlta extends JFrame {
         private final JTextField txtTelefono = new JTextField();
         private final JTextField txtCorreo = new JTextField();
 
+        /**
+         * Construye el panel de persona.
+         *
+         * @param index número secuencial mostrado en la UI.
+         */
         PersonaPanel(int index) {
             setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
             setOpaque(true);
@@ -356,6 +431,9 @@ public class FormularioAlta extends JFrame {
             add(crearFila("Parentesco", cmbParentesco));
         }
 
+        /**
+         * Valida los campos de persona previos a la serialización XML.
+         */
         void validar() {
             if (!SOLO_LETRAS.matcher(txtNacionalidad.getText()).matches()) {
                 throw new IllegalArgumentException("Nacionalidad solo puede tener letras");
@@ -375,6 +453,11 @@ public class FormularioAlta extends JFrame {
             }
         }
 
+        /**
+         * Serializa los datos de una persona a su bloque XML.
+         *
+         * @return XML de la persona actual.
+         */
         String aXml() {
             LocalDate fechaNac = dateToLocalDate(dateNacimiento.getDate());
 
@@ -410,12 +493,22 @@ public class FormularioAlta extends JFrame {
         }
     }
 
+    /**
+     * Selector de fecha compuesto por campo de texto y diálogo de selección.
+     */
     private static class DatePickerField extends JPanel {
         private final JTextField txtFecha = new JTextField();
         private final JButton btnCalendario = new JButton("📅");
         private final LocalDate minDate;
         private final LocalDate maxDate;
 
+        /**
+         * Crea el selector con fecha inicial y límites de rango.
+         *
+         * @param initialDate fecha inicial mostrada.
+         * @param minDate fecha mínima permitida.
+         * @param maxDate fecha máxima permitida.
+         */
         DatePickerField(LocalDate initialDate, LocalDate minDate, LocalDate maxDate) {
             this.minDate = minDate;
             this.maxDate = maxDate;
@@ -427,6 +520,9 @@ public class FormularioAlta extends JFrame {
             btnCalendario.addActionListener(e -> abrirSelectorFecha());
         }
 
+        /**
+         * Abre un diálogo modal para elegir día, mes y año.
+         */
         private void abrirSelectorFecha() {
             JDialog dialog = new JDialog((Frame) null, "Seleccionar fecha", true);
             dialog.setLayout(new BorderLayout(8, 8));
@@ -500,6 +596,11 @@ public class FormularioAlta extends JFrame {
             dialog.setVisible(true);
         }
 
+        /**
+         * Obtiene la fecha seleccionada normalizada dentro del rango permitido.
+         *
+         * @return fecha seleccionada como {@link Date}.
+         */
         Date getDate() {
             LocalDate localDate = LocalDate.parse(txtFecha.getText(), ISO_DATE);
             if (localDate.isBefore(minDate)) {
@@ -512,6 +613,9 @@ public class FormularioAlta extends JFrame {
         }
     }
 
+    /**
+     * Aplica estilos base a botones y paneles principales.
+     */
     private void aplicarEstilos() {
         panelFormulario.setOpaque(true);
         panelFormulario.setBackground(new Color(255, 255, 255, 150));
@@ -524,6 +628,11 @@ public class FormularioAlta extends JFrame {
         btnAgregarPersona.setFocusPainted(false);
     }
 
+    /**
+     * Punto de entrada de la ventana Swing.
+     *
+     * @param args argumentos de ejecución.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new FormularioAlta().setVisible(true));
     }

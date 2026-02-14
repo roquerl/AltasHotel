@@ -5,8 +5,16 @@ import java.io.FileOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+/**
+ * Utilidad para comprimir el XML de comunicación en formato ZIP.
+ */
 public class ZipUtil {
 
+    /**
+     * Comprime el fichero XML generado en un ZIP llamado {@code comunicacion.zip}.
+     *
+     * @throws Exception si ocurre un error de lectura/escritura durante la compresión.
+     */
     public static void comprimirXML() throws Exception {
 
         try (ZipOutputStream zipOut = new ZipOutputStream(new FileOutputStream(OutputPaths.zipPath().toFile()));
