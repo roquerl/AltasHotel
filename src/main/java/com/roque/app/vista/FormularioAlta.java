@@ -65,8 +65,8 @@ public class FormularioAlta extends JFrame {
     private final JPanel panelPersonas = new JPanel();
 
     private final JTextField txtReferencia = new JTextField(15);
-    private final DatePickerField dateEntrada = new DatePickerField(LocalDate.now(), LocalDate.now(), LocalDate.of(2100, 12, 31));
-    private final DatePickerField dateSalida = new DatePickerField(LocalDate.now(), LocalDate.now(), LocalDate.of(2100, 12, 31));
+    private final DatePickerField dateEntrada = DatePickerField.desdeHoy(LocalDate.of(2100, 12, 31));
+    private final DatePickerField dateSalida = DatePickerField.desdeHoy(LocalDate.of(2100, 12, 31));
     private final JTextField txtNumPersonas = new JTextField(5);
     private final JTextField txtNumHabitaciones = new JTextField(5);
     private final JComboBox<String> cmbInternet = new JComboBox<>(new String[]{"false", "true"});
@@ -501,6 +501,7 @@ public class FormularioAlta extends JFrame {
         private final JButton btnCalendario = new JButton("📅");
         private final LocalDate minDate;
         private final LocalDate maxDate;
+        private final boolean minIsToday;
 
         /**
          * Crea el selector con fecha inicial y límites de rango.
@@ -510,8 +511,13 @@ public class FormularioAlta extends JFrame {
          * @param maxDate fecha máxima permitida.
          */
         DatePickerField(LocalDate initialDate, LocalDate minDate, LocalDate maxDate) {
+            this(initialDate, minDate, maxDate, false);
+        }
+
+        private DatePickerField(LocalDate initialDate, LocalDate minDate, LocalDate maxDate, boolean minIsToday) {
             this.minDate = minDate;
             this.maxDate = maxDate;
+            this.minIsToday = minIsToday;
             setLayout(new BorderLayout(6, 0));
             txtFecha.setEditable(false);
             txtFecha.setText(initialDate.format(ISO_DATE));
@@ -521,19 +527,34 @@ public class FormularioAlta extends JFrame {
         }
 
         /**
+         * Crea un selector cuya fecha mínima efectiva es siempre el día actual.
+         *
+         * @param maxDate fecha máxima permitida.
+         * @return selector de fecha con mínimo dinámico de hoy.
+         */
+        static DatePickerField desdeHoy(LocalDate maxDate) {
+            return new DatePickerField(LocalDate.now(), LocalDate.now(), maxDate, true);
+        }
+
+        private LocalDate effectiveMinDate() {
+            return minIsToday ? LocalDate.now() : minDate;
+        }
+
+        /**
          * Abre un diálogo modal para elegir día, mes y año.
          */
         private void abrirSelectorFecha() {
             JDialog dialog = new JDialog((Frame) null, "Seleccionar fecha", true);
             dialog.setLayout(new BorderLayout(8, 8));
 
+            LocalDate currentMinDate = effectiveMinDate();
             LocalDate parsed = LocalDate.parse(txtFecha.getText(), ISO_DATE);
-            final LocalDate base = parsed.isBefore(minDate) ? minDate : (parsed.isAfter(maxDate) ? maxDate : parsed);
+            final LocalDate base = parsed.isBefore(currentMinDate) ? currentMinDate : (parsed.isAfter(maxDate) ? maxDate : parsed);
 
-            int totalYears = maxDate.getYear() - minDate.getYear() + 1;
+            int totalYears = maxDate.getYear() - currentMinDate.getYear() + 1;
             Integer[] years = new Integer[totalYears];
             for (int i = 0; i < totalYears; i++) {
-                years[i] = minDate.getYear() + i;
+                years[i] = currentMinDate.getYear() + i;
             }
 
             JComboBox<Integer> cmbYear = new JComboBox<>(years);
@@ -552,7 +573,7 @@ public class FormularioAlta extends JFrame {
             Runnable cargarMeses = () -> {
                 int y = (Integer) cmbYear.getSelectedItem();
                 cmbMonth.removeAllItems();
-                int minMonth = (y == minDate.getYear()) ? minDate.getMonthValue() : 1;
+                int minMonth = (y == currentMinDate.getYear()) ? currentMinDate.getMonthValue() : 1;
                 int maxMonth = (y == maxDate.getYear()) ? maxDate.getMonthValue() : 12;
                 for (int month = minMonth; month <= maxMonth; month++) {
                     cmbMonth.addItem(month);
@@ -565,7 +586,7 @@ public class FormularioAlta extends JFrame {
                 cmbDay.removeAllItems();
                 int y = (Integer) cmbYear.getSelectedItem();
                 int m = (Integer) cmbMonth.getSelectedItem();
-                int minDay = (y == minDate.getYear() && m == minDate.getMonthValue()) ? minDate.getDayOfMonth() : 1;
+                int minDay = (y == currentMinDate.getYear() && m == currentMinDate.getMonthValue()) ? currentMinDate.getDayOfMonth() : 1;
                 int maxDay = (y == maxDate.getYear() && m == maxDate.getMonthValue())
                         ? maxDate.getDayOfMonth() : LocalDate.of(y, m, 1).lengthOfMonth();
                 for (int d = minDay; d <= maxDay; d++) {
@@ -604,9 +625,10 @@ public class FormularioAlta extends JFrame {
 
             btnOk.addActionListener(e -> {
                 LocalDate selected = LocalDate.of((Integer) cmbYear.getSelectedItem(), (Integer) cmbMonth.getSelectedItem(), (Integer) cmbDay.getSelectedItem());
-                if (selected.isBefore(minDate) || selected.isAfter(maxDate)) {
+                LocalDate effectiveMin = effectiveMinDate();
+                if (selected.isBefore(effectiveMin) || selected.isAfter(maxDate)) {
                     JOptionPane.showMessageDialog(dialog,
-                            "Fecha fuera de rango permitido (" + minDate + " a " + maxDate + ")");
+                            "Fecha fuera de rango permitido (" + effectiveMin + " a " + maxDate + ")");
                     return;
                 }
                 txtFecha.setText(selected.format(ISO_DATE));
@@ -627,9 +649,10 @@ public class FormularioAlta extends JFrame {
          * @return fecha seleccionada como {@link Date}.
          */
         Date getDate() {
+            LocalDate effectiveMin = effectiveMinDate();
             LocalDate localDate = LocalDate.parse(txtFecha.getText(), ISO_DATE);
-            if (localDate.isBefore(minDate)) {
-                localDate = minDate;
+            if (localDate.isBefore(effectiveMin)) {
+                localDate = effectiveMin;
             }
             if (localDate.isAfter(maxDate)) {
                 localDate = maxDate;
