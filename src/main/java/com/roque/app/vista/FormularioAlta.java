@@ -65,10 +65,8 @@ public class FormularioAlta extends JFrame {
     private final JPanel panelPersonas = new JPanel();
 
     private final JTextField txtReferencia = new JTextField(15);
-    private final DatePickerField dateEntrada = new DatePickerField(LocalDate.now().isAfter(LocalDate.of(2026, 1, 1))
-            ? LocalDate.now() : LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1), LocalDate.of(2100, 12, 31));
-    private final DatePickerField dateSalida = new DatePickerField(LocalDate.now().isAfter(LocalDate.of(2026, 1, 1))
-            ? LocalDate.now() : LocalDate.of(2026, 1, 1), LocalDate.of(2026, 1, 1), LocalDate.of(2100, 12, 31));
+    private final DatePickerField dateEntrada = new DatePickerField(LocalDate.now(), LocalDate.now(), LocalDate.of(2100, 12, 31));
+    private final DatePickerField dateSalida = new DatePickerField(LocalDate.now(), LocalDate.now(), LocalDate.of(2100, 12, 31));
     private final JTextField txtNumPersonas = new JTextField(5);
     private final JTextField txtNumHabitaciones = new JTextField(5);
     private final JComboBox<String> cmbInternet = new JComboBox<>(new String[]{"false", "true"});
@@ -231,10 +229,12 @@ public class FormularioAlta extends JFrame {
         }
         LocalDate entrada = dateToLocalDate(dateEntrada.getDate());
         LocalDate salida = dateToLocalDate(dateSalida.getDate());
-        LocalDate minimoEntrada = LocalDate.now().isAfter(LocalDate.of(2026, 1, 1))
-                ? LocalDate.now() : LocalDate.of(2026, 1, 1);
+        LocalDate minimoEntrada = LocalDate.now();
         if (entrada.isBefore(minimoEntrada)) {
             throw new IllegalArgumentException("La fecha de entrada no puede ser anterior a " + minimoEntrada);
+        }
+        if (salida.isBefore(minimoEntrada)) {
+            throw new IllegalArgumentException("La fecha de salida no puede ser anterior a " + minimoEntrada);
         }
         if (salida.isBefore(entrada)) {
             throw new IllegalArgumentException("La fecha de salida no puede ser anterior a la fecha de entrada");
@@ -376,7 +376,7 @@ public class FormularioAlta extends JFrame {
         private final JTextField txtNumeroDocumento = new JTextField();
         private final JTextField txtSoporteDocumento = new JTextField();
         private final DatePickerField dateNacimiento = new DatePickerField(LocalDate.of(2000, 1, 1), LocalDate.of(1800, 1, 1), LocalDate.now());
-        private final JComboBox<String> cmbParentesco = new JComboBox<>(new String[]{"", "HJ"});
+        private final JComboBox<String> cmbParentesco = new JComboBox<>(new String[]{"", "HJ", "HR", "NI", "SB", "YN", "AB", "PM", "OT"});
         private final JTextField txtNacionalidad = new JTextField("ESP");
         private final JComboBox<String> cmbSexo = new JComboBox<>(new String[]{"H", "M"});
         private final JTextField txtDireccion = new JTextField();
@@ -547,20 +547,45 @@ public class FormularioAlta extends JFrame {
             cmbYear.setSelectedItem(base.getYear());
             cmbMonth.setSelectedItem(base.getMonthValue());
 
+            final int[] daySelection = new int[]{base.getDayOfMonth()};
+
+            Runnable cargarMeses = () -> {
+                int y = (Integer) cmbYear.getSelectedItem();
+                cmbMonth.removeAllItems();
+                int minMonth = (y == minDate.getYear()) ? minDate.getMonthValue() : 1;
+                int maxMonth = (y == maxDate.getYear()) ? maxDate.getMonthValue() : 12;
+                for (int month = minMonth; month <= maxMonth; month++) {
+                    cmbMonth.addItem(month);
+                }
+                int preferred = Math.max(minMonth, Math.min((int) (cmbMonth.getItemCount() > 0 ? base.getMonthValue() : minMonth), maxMonth));
+                cmbMonth.setSelectedItem(preferred);
+            };
+
             Runnable cargarDias = () -> {
                 cmbDay.removeAllItems();
                 int y = (Integer) cmbYear.getSelectedItem();
                 int m = (Integer) cmbMonth.getSelectedItem();
-                int max = LocalDate.of(y, m, 1).lengthOfMonth();
-                for (int d = 1; d <= max; d++) {
+                int minDay = (y == minDate.getYear() && m == minDate.getMonthValue()) ? minDate.getDayOfMonth() : 1;
+                int maxDay = (y == maxDate.getYear() && m == maxDate.getMonthValue())
+                        ? maxDate.getDayOfMonth() : LocalDate.of(y, m, 1).lengthOfMonth();
+                for (int d = minDay; d <= maxDay; d++) {
                     cmbDay.addItem(d);
                 }
-                int selected = Math.min(base.getDayOfMonth(), max);
+                int selected = Math.max(minDay, Math.min(daySelection[0], maxDay));
                 cmbDay.setSelectedItem(selected);
             };
 
-            cmbYear.addActionListener(e -> cargarDias.run());
+            cmbYear.addActionListener(e -> {
+                cargarMeses.run();
+                cargarDias.run();
+            });
             cmbMonth.addActionListener(e -> cargarDias.run());
+            cmbDay.addActionListener(e -> {
+                if (cmbDay.getSelectedItem() != null) {
+                    daySelection[0] = (Integer) cmbDay.getSelectedItem();
+                }
+            });
+            cargarMeses.run();
             cargarDias.run();
 
             JPanel pickers = new JPanel(new GridLayout(2, 3, 8, 4));
