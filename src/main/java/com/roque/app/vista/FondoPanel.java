@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.roque.app.vista;
 
 import java.awt.Graphics;
@@ -11,18 +7,26 @@ import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 
 /**
- *
- * @author roque
+ * Panel con imagen de fondo escalada para ocupar toda la ventana.
  */
-public class FondoPanel extends JPanel{
-    
+public class FondoPanel extends JPanel {
+
+    /** Imagen de fondo cargada desde recursos. */
     private final Image imagen;
 
+    /**
+     * Crea el panel y carga la imagen {@code /hotel_fondo.jpg} si existe en el classpath.
+     */
     public FondoPanel() {
         URL url = getClass().getResource("/hotel_fondo.jpg");
         imagen = url != null ? new ImageIcon(url).getImage() : null;
     }
 
+    /**
+     * Pinta el panel y escala la imagen de fondo manteniendo proporciones.
+     *
+     * @param g contexto gráfico de Swing.
+     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -43,6 +47,4 @@ public class FondoPanel extends JPanel{
             g.drawImage(imagen, x, y, nuevoAncho, nuevoAlto, this);
         }
     }
-
-    
 }
