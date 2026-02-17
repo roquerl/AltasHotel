@@ -1,316 +1,664 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
- */
 package com.roque.app.vista;
 
 import com.roque.app.modelo.GeneradorXML;
 import com.roque.app.util.Base64Util;
 import com.roque.app.util.ZipUtil;
+import com.roque.app.util.OutputPaths;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
+import java.util.regex.Pattern;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 
 /**
- *
- * @author roque
+ * Ventana principal para capturar los datos de altas de hospedaje y generar
+ * el XML, ZIP y Base64 requeridos por el flujo de comunicación.
  */
-public class FormularioAlta extends javax.swing.JFrame {
-    
-    private final FondoPanel fondo = new FondoPanel();
+public class FormularioAlta extends JFrame {
 
-    
-    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(FormularioAlta.class.getName());
+    private static final String CODIGO_ESTABLECIMIENTO = "1234567890";
+    private static final DateTimeFormatter ISO_DATE = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final DateTimeFormatter ISO_DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    private static final DateTimeFormatter ISO_DATE_TIME_OFFSET = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
+    private static final Pattern SOLO_LETRAS = Pattern.compile("^[A-Za-zÁÉÍÓÚáéíóúÑñ\\s]+$");
+    private static final Pattern EMAIL_VALIDO = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
+    private static final Pattern DNI_VALIDO = Pattern.compile("^\\d{7}[A-Z]$");
+    private static final Pattern NIE_VALIDO = Pattern.compile("^[A-Z]\\d{6}[A-Z]$");
+
+    private final FondoPanel fondo = new FondoPanel();
+    private final JPanel panelFormulario = new JPanel();
+    private final JPanel panelPersonas = new JPanel();
+
+    private final JTextField txtReferencia = new JTextField(15);
+    private final DatePickerField dateEntrada = new DatePickerField(LocalDate.now(), LocalDate.now(), LocalDate.of(2100, 12, 31));
+    private final DatePickerField dateSalida = new DatePickerField(LocalDate.now(), LocalDate.now(), LocalDate.of(2100, 12, 31));
+    private final JTextField txtNumPersonas = new JTextField(5);
+    private final JTextField txtNumHabitaciones = new JTextField(5);
+    private final JComboBox<String> cmbInternet = new JComboBox<>(new String[]{"false", "true"});
+    private final JComboBox<String> cmbTipoPago = new JComboBox<>(new String[]{"EFECT", "CARD", "BIZUM"});
+    private final JButton btnAgregarPersona = new JButton("Añadir persona");
+    private final JButton btnGenerar = new JButton("Generar Alta");
+
+    private final List<PersonaPanel> personas = new ArrayList<>();
 
     /**
-     * Creates new form FormularioAlta
+     * Crea la ventana principal y prepara todos los componentes visuales.
      */
     public FormularioAlta() {
-        initComponents();
-
-        this.setContentPane(fondo);
-        fondo.setLayout(new GridBagLayout());
-
-        panelFormulario.setPreferredSize(new Dimension(420, 340));
-        panelFormulario.setMinimumSize(new Dimension(420, 340));
-
-        fondo.add(panelFormulario);
-
-        setMinimumSize(new Dimension(900, 600));
-        setLocationRelativeTo(null);
-
+        configurarVentana();
+        construirFormulario();
         aplicarEstilos();
+        agregarPersona();
     }
 
+    /**
+     * Configura propiedades generales de la ventana.
+     */
+    private void configurarVentana() {
+        setTitle("Reserva de Hotel");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setContentPane(fondo);
+        fondo.setLayout(new GridBagLayout());
+        setMinimumSize(new Dimension(1000, 760));
+        setLocationRelativeTo(null);
+    }
 
     /**
-     * This method is called from within the constructor to initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is always
-     * regenerated by the Form Editor.
+     * Construye la estructura visual del formulario y sus listeners.
      */
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
+    private void construirFormulario() {
+        panelFormulario.setLayout(new BoxLayout(panelFormulario, BoxLayout.Y_AXIS));
+        panelFormulario.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(255, 255, 255, 100), 1, true),
+                BorderFactory.createEmptyBorder(18, 18, 18, 18)
+        ));
 
-        FondoPanel = new javax.swing.JPanel();
-        panelCentrador = new javax.swing.JPanel();
-        panelFormulario = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
-        jLabel4 = new javax.swing.JLabel();
-        jLabel5 = new javax.swing.JLabel();
-        txtDocumento = new javax.swing.JTextField();
-        txtNombre = new javax.swing.JTextField();
-        txtApellidos = new javax.swing.JTextField();
-        txtEntrada = new javax.swing.JTextField();
-        txtSalida = new javax.swing.JTextField();
-        btnGenerar = new javax.swing.JButton();
-        txtTitulo = new javax.swing.JLabel();
+        JLabel titulo = new JLabel("RESERVA DE HOTEL", SwingConstants.CENTER);
+        titulo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        titulo.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        panelFormulario.add(titulo);
+        panelFormulario.add(Box.createVerticalStrut(12));
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        panelFormulario.add(crearFila("Referencia", txtReferencia));
+        panelFormulario.add(crearFila("Fecha entrada", dateEntrada));
+        panelFormulario.add(crearFila("Fecha salida", dateSalida));
+        panelFormulario.add(crearFila("Num. personas", txtNumPersonas));
+        panelFormulario.add(crearFila("Num. habitaciones", txtNumHabitaciones));
+        panelFormulario.add(crearFila("Internet", cmbInternet));
+        panelFormulario.add(crearFila("Tipo pago", cmbTipoPago));
 
-        FondoPanel.setLayout(new java.awt.BorderLayout());
+        panelFormulario.add(Box.createVerticalStrut(10));
+        JLabel etiquetaPersonas = new JLabel("Personas");
+        etiquetaPersonas.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        panelFormulario.add(etiquetaPersonas);
+        panelFormulario.add(Box.createVerticalStrut(8));
 
-        panelFormulario.setPreferredSize(new java.awt.Dimension(360, 0));
+        panelPersonas.setLayout(new BoxLayout(panelPersonas, BoxLayout.Y_AXIS));
+        panelPersonas.setOpaque(false);
+        panelFormulario.add(panelPersonas);
 
-        jLabel1.setText("Nombre:");
+        JPanel accionesPersona = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        accionesPersona.setOpaque(false);
+        accionesPersona.add(btnAgregarPersona);
+        panelFormulario.add(Box.createVerticalStrut(6));
+        panelFormulario.add(accionesPersona);
 
-        jLabel2.setText("Apellidos:");
+        JPanel accionesFinal = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 8));
+        accionesFinal.setOpaque(false);
+        accionesFinal.add(btnGenerar);
+        panelFormulario.add(Box.createVerticalStrut(12));
+        panelFormulario.add(accionesFinal);
 
-        jLabel3.setText("DNI/NIE:");
+        JScrollPane scroll = new JScrollPane(panelFormulario);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.getViewport().setOpaque(false);
+        scroll.setOpaque(false);
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.setPreferredSize(new Dimension(820, 640));
 
-        jLabel4.setText("Fecha de entrada:");
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.CENTER;
+        fondo.add(scroll, gbc);
 
-        jLabel5.setText("Fecha de salida:");
+        limitarNumerico(txtNumPersonas, 3);
+        limitarNumerico(txtNumHabitaciones, 3);
 
-        txtDocumento.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txtDocumentoActionPerformed(evt);
-            }
-        });
+        btnAgregarPersona.addActionListener(e -> agregarPersona());
+        btnGenerar.addActionListener(e -> generarAlta());
+    }
 
-        txtEntrada.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txtEntradaActionPerformed(evt);
-            }
-        });
+    /**
+     * Crea una fila estándar compuesta por etiqueta y componente de entrada.
+     *
+     * @param label texto de la etiqueta.
+     * @param input componente de entrada asociado.
+     * @return panel con la fila preparada.
+     */
+    private JPanel crearFila(String label, Component input) {
+        JPanel fila = new JPanel(new BorderLayout(12, 0));
+        fila.setOpaque(false);
+        fila.setBorder(BorderFactory.createEmptyBorder(4, 0, 4, 0));
+        JLabel lbl = new JLabel(label);
+        lbl.setPreferredSize(new Dimension(250, 28));
+        fila.add(lbl, BorderLayout.WEST);
+        fila.add(input, BorderLayout.CENTER);
+        return fila;
+    }
 
-        txtSalida.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                txtSalidaActionPerformed(evt);
-            }
-        });
+    /**
+     * Añade un bloque visual de persona al formulario y actualiza el contador.
+     */
+    private void agregarPersona() {
+        PersonaPanel persona = new PersonaPanel(personas.size() + 1);
+        personas.add(persona);
+        panelPersonas.add(persona);
+        panelPersonas.add(Box.createVerticalStrut(8));
+        txtNumPersonas.setText(String.valueOf(personas.size()));
+        panelPersonas.revalidate();
+        panelPersonas.repaint();
+    }
 
-        btnGenerar.setText("Generar Alta");
-        btnGenerar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnGenerarActionPerformed(evt);
-            }
-        });
-
-        txtTitulo.setText("RESERVA DE HOTEL");
-
-        javax.swing.GroupLayout panelFormularioLayout = new javax.swing.GroupLayout(panelFormulario);
-        panelFormulario.setLayout(panelFormularioLayout);
-        panelFormularioLayout.setHorizontalGroup(
-            panelFormularioLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelFormularioLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(panelFormularioLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(txtTitulo, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addGroup(panelFormularioLayout.createSequentialGroup()
-                        .addGroup(panelFormularioLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jLabel3)
-                            .addComponent(jLabel1)
-                            .addComponent(jLabel2)
-                            .addComponent(jLabel4)
-                            .addComponent(jLabel5))
-                        .addGap(18, 18, 18)
-                        .addGroup(panelFormularioLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(txtDocumento)
-                            .addComponent(txtNombre)
-                            .addComponent(txtApellidos)
-                            .addComponent(txtEntrada)
-                            .addComponent(txtSalida)))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelFormularioLayout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(btnGenerar)
-                        .addGap(0, 0, Short.MAX_VALUE)))
-                .addContainerGap())
-        );
-        panelFormularioLayout.setVerticalGroup(
-            panelFormularioLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(panelFormularioLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(txtTitulo, javax.swing.GroupLayout.PREFERRED_SIZE, 33, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(panelFormularioLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel3)
-                    .addComponent(txtDocumento, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(panelFormularioLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(txtNombre, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jLabel1))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(panelFormularioLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel2)
-                    .addComponent(txtApellidos, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(panelFormularioLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel4)
-                    .addComponent(txtEntrada, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(panelFormularioLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel5)
-                    .addComponent(txtSalida, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(18, 18, 18)
-                .addComponent(btnGenerar)
-                .addContainerGap(21, Short.MAX_VALUE))
-        );
-
-        javax.swing.GroupLayout panelCentradorLayout = new javax.swing.GroupLayout(panelCentrador);
-        panelCentrador.setLayout(panelCentradorLayout);
-        panelCentradorLayout.setHorizontalGroup(
-            panelCentradorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 360, Short.MAX_VALUE)
-            .addGroup(panelCentradorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(panelCentradorLayout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(panelFormulario, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, Short.MAX_VALUE)))
-        );
-        panelCentradorLayout.setVerticalGroup(
-            panelCentradorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 100, Short.MAX_VALUE)
-            .addGroup(panelCentradorLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(panelCentradorLayout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(panelFormulario, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGap(0, 0, Short.MAX_VALUE)))
-        );
-
-        FondoPanel.add(panelCentrador, java.awt.BorderLayout.PAGE_START);
-
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(FondoPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(2227, Short.MAX_VALUE))
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGap(169, 169, 169)
-                .addComponent(FondoPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(604, Short.MAX_VALUE))
-        );
-
-        pack();
-    }// </editor-fold>//GEN-END:initComponents
-
-    private void txtDocumentoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtDocumentoActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_txtDocumentoActionPerformed
-
-    private void txtEntradaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtEntradaActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_txtEntradaActionPerformed
-
-    private void txtSalidaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtSalidaActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_txtSalidaActionPerformed
-
-    private void btnGenerarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnGenerarActionPerformed
-        String nombre = txtNombre.getText();
-        String apellidos = txtApellidos.getText();
-        String documento = txtDocumento.getText();
-        String entrada = txtEntrada.getText();
-        String salida = txtSalida.getText();
-        
+    /**
+     * Ejecuta el flujo completo de generación: XML, ZIP, Base64 y guardado final.
+     */
+    private void generarAlta() {
         try {
-            GeneradorXML.generarXML(nombre, apellidos, documento, entrada, salida);
+            validarCabecera();
+            for (PersonaPanel persona : personas) {
+                persona.validar();
+            }
+
+            String xml = construirXml();
+            GeneradorXML.generarXML(xml);
             ZipUtil.comprimirXML();
             String base64 = Base64Util.convertirZipBase64();
             Base64Util.guardarTXT(base64);
 
-            JOptionPane.showMessageDialog(this, "Comunicación generada correctamente");
-
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error: " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Comunicación generada correctamente en: " + OutputPaths.xmlPath().getParent());
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage());
         }
-    }//GEN-LAST:event_btnGenerarActionPerformed
+    }
 
     /**
-     * @param args the command line arguments
+     * Valida los datos generales del contrato antes de generar el XML.
+     */
+    private void validarCabecera() {
+        if (txtNumHabitaciones.getText().isBlank()) {
+            throw new IllegalArgumentException("Num. habitaciones obligatorio");
+        }
+        LocalDate entrada = dateToLocalDate(dateEntrada.getDate());
+        LocalDate salida = dateToLocalDate(dateSalida.getDate());
+        LocalDate minimoEntrada = LocalDate.now();
+        if (entrada.isBefore(minimoEntrada)) {
+            throw new IllegalArgumentException("La fecha de entrada no puede ser anterior a " + minimoEntrada);
+        }
+        if (salida.isBefore(minimoEntrada)) {
+            throw new IllegalArgumentException("La fecha de salida no puede ser anterior a " + minimoEntrada);
+        }
+        if (salida.isBefore(entrada)) {
+            throw new IllegalArgumentException("La fecha de salida no puede ser anterior a la fecha de entrada");
+        }
+    }
+
+    /**
+     * Convierte una fecha {@link Date} a {@link LocalDate}.
+     *
+     * @param value fecha origen.
+     * @return fecha convertida en zona local.
+     */
+    private LocalDate dateToLocalDate(Date value) {
+        return Instant.ofEpochMilli(value.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
+    }
+
+    /**
+     * Construye el XML completo con el formato oficial requerido.
+     *
+     * @return contenido XML serializado.
+     */
+    private String construirXml() {
+        LocalDate hoy = LocalDate.now();
+        Random random = new Random();
+
+        LocalDate entrada = dateToLocalDate(dateEntrada.getDate());
+        LocalDate salida = dateToLocalDate(dateSalida.getDate());
+
+        java.time.LocalDateTime fechaEntradaAleatoria = entrada
+                .atTime(LocalTime.of(random.nextInt(24), random.nextInt(60), random.nextInt(60)));
+        OffsetDateTime fechaSalidaAleatoria = salida
+                .atTime(LocalTime.of(random.nextInt(24), random.nextInt(60), random.nextInt(60)))
+                .atOffset(ZoneOffset.ofHours(2));
+
+        StringBuilder xml = new StringBuilder();
+        xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        xml.append("<alt:peticion xmlns:alt=\"http://www.neg.hospedajes.mir.es/altaParteHospedaje\">\n");
+        xml.append("  <solicitud>\n");
+        xml.append("    <codigoEstablecimiento>").append(CODIGO_ESTABLECIMIENTO).append("</codigoEstablecimiento>\n");
+        xml.append("    <comunicacion>\n");
+        xml.append("      <contrato>\n");
+        xml.append("        <referencia>").append(escapeXml(txtReferencia.getText())).append("</referencia>\n");
+        xml.append("        <fechaContrato>").append(hoy.format(ISO_DATE)).append("</fechaContrato>\n");
+        xml.append("        <fechaEntrada>").append(fechaEntradaAleatoria.format(ISO_DATE_TIME)).append("</fechaEntrada>\n");
+        xml.append("        <fechaSalida>").append(fechaSalidaAleatoria.format(ISO_DATE_TIME_OFFSET)).append("</fechaSalida>\n");
+        xml.append("        <numPersonas>").append(txtNumPersonas.getText()).append("</numPersonas>\n");
+        xml.append("        <numHabitaciones>").append(txtNumHabitaciones.getText()).append("</numHabitaciones>\n");
+        xml.append("        <internet>").append(cmbInternet.getSelectedItem()).append("</internet>\n");
+        xml.append("        <pago>\n");
+        xml.append("          <tipoPago>").append(cmbTipoPago.getSelectedItem()).append("</tipoPago>\n");
+        xml.append("          <fechaPago>").append(hoy.format(ISO_DATE)).append("</fechaPago>\n");
+        xml.append("        </pago>\n");
+        xml.append("      </contrato>\n");
+
+        for (PersonaPanel persona : personas) {
+            xml.append(persona.aXml());
+        }
+
+        xml.append("    </comunicacion>\n");
+        xml.append("  </solicitud>\n");
+        xml.append("</alt:peticion>\n");
+        return xml.toString();
+    }
+
+    /**
+     * Escapa caracteres especiales para que el valor sea válido dentro del XML.
+     *
+     * @param value texto de entrada.
+     * @return texto escapado.
+     */
+    private static String escapeXml(String value) {
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&apos;");
+    }
+
+    /**
+     * Limita un campo de texto a dígitos y una longitud máxima.
+     *
+     * @param field campo a restringir.
+     * @param maxLength longitud máxima permitida.
+     */
+    private void limitarNumerico(JTextField field, int maxLength) {
+        ((AbstractDocument) field.getDocument()).setDocumentFilter(new RegexFilter("\\d*", maxLength));
+    }
+
+    /**
+     * Filtro de documento para aplicar reglas por expresión regular y tamaño máximo.
+     */
+    private static class RegexFilter extends DocumentFilter {
+        private final Pattern pattern;
+        private final int maxLength;
+
+        /**
+         * Crea el filtro de validación.
+         *
+         * @param regex patrón permitido.
+         * @param maxLength longitud máxima total.
+         */
+        RegexFilter(String regex, int maxLength) {
+            this.pattern = Pattern.compile(regex);
+            this.maxLength = maxLength;
+        }
+
+        /**
+         * Reemplaza texto validando patrón y longitud.
+         */
+        @Override
+        public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+            String current = fb.getDocument().getText(0, fb.getDocument().getLength());
+            String next = current.substring(0, offset) + (text == null ? "" : text) + current.substring(offset + length);
+            if (next.length() <= maxLength && pattern.matcher(next).matches()) {
+                super.replace(fb, offset, length, text, attrs);
+            }
+        }
+
+        /**
+         * Inserta texto aplicando la misma validación que en reemplazo.
+         */
+        @Override
+        public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+            replace(fb, offset, 0, string, attr);
+        }
+    }
+
+    /**
+     * Subformulario con los datos de una persona hospedada.
+     */
+    private class PersonaPanel extends JPanel {
+
+        private final JComboBox<String> cmbRol = new JComboBox<>(new String[]{"VIP", "TURISTA"});
+        private final JTextField txtNombre = new JTextField();
+        private final JTextField txtApellido1 = new JTextField();
+        private final JTextField txtApellido2 = new JTextField();
+        private final JComboBox<String> cmbTipoDocumento = new JComboBox<>(new String[]{"DNI", "NIE"});
+        private final JTextField txtNumeroDocumento = new JTextField();
+        private final JTextField txtSoporteDocumento = new JTextField();
+        private final DatePickerField dateNacimiento = new DatePickerField(LocalDate.of(2000, 1, 1), LocalDate.of(1800, 1, 1), LocalDate.now());
+        private final JComboBox<String> cmbParentesco = new JComboBox<>(new String[]{"", "HJ", "HR", "NI", "SB", "YN", "AB", "PM", "OT"});
+        private final JTextField txtNacionalidad = new JTextField("ESP");
+        private final JComboBox<String> cmbSexo = new JComboBox<>(new String[]{"H", "M"});
+        private final JTextField txtDireccion = new JTextField();
+        private final JTextField txtDireccionComplementaria = new JTextField();
+        private final JTextField txtCodigoMunicipio = new JTextField();
+        private final JTextField txtCodigoPostal = new JTextField();
+        private final JTextField txtTelefono = new JTextField();
+        private final JTextField txtCorreo = new JTextField();
+
+        /**
+         * Construye el panel de persona.
+         *
+         * @param index número secuencial mostrado en la UI.
+         */
+        PersonaPanel(int index) {
+            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+            setOpaque(true);
+            setBackground(new Color(255, 255, 255, 170));
+            setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(new Color(255, 255, 255, 140), 1, true),
+                    BorderFactory.createEmptyBorder(12, 12, 12, 12)
+            ));
+
+            JLabel tituloPersona = new JLabel("Persona " + index);
+            tituloPersona.setFont(new Font("Segoe UI", Font.BOLD, 15));
+            add(tituloPersona);
+            add(Box.createVerticalStrut(6));
+
+            txtDireccionComplementaria.setToolTipText("Ejemplo: Portal - Piso - Letra");
+
+            limitarNumerico(txtSoporteDocumento, 9);
+            limitarNumerico(txtCodigoMunicipio, 5);
+            limitarNumerico(txtCodigoPostal, 5);
+            limitarNumerico(txtTelefono, 9);
+
+            add(crearFila("Rol", cmbRol));
+            add(crearFila("Nombre", txtNombre));
+            add(crearFila("Apellido 1", txtApellido1));
+            add(crearFila("Apellido 2", txtApellido2));
+            add(crearFila("Tipo documento", cmbTipoDocumento));
+            add(crearFila("Número documento", txtNumeroDocumento));
+            add(crearFila("Soporte documento", txtSoporteDocumento));
+            add(crearFila("Fecha nacimiento", dateNacimiento));
+            add(crearFila("Nacionalidad", txtNacionalidad));
+            add(crearFila("Sexo", cmbSexo));
+            add(crearFila("Dirección", txtDireccion));
+            add(crearFila("Dirección complementaria", txtDireccionComplementaria));
+            add(crearFila("Código municipio", txtCodigoMunicipio));
+            add(crearFila("Código postal", txtCodigoPostal));
+            add(crearFila("Teléfono", txtTelefono));
+            add(crearFila("Correo", txtCorreo));
+            add(crearFila("Parentesco", cmbParentesco));
+        }
+
+        /**
+         * Valida los campos de persona previos a la serialización XML.
+         */
+        void validar() {
+            if (!SOLO_LETRAS.matcher(txtNacionalidad.getText()).matches()) {
+                throw new IllegalArgumentException("Nacionalidad solo puede tener letras");
+            }
+            if (!EMAIL_VALIDO.matcher(txtCorreo.getText()).matches()) {
+                throw new IllegalArgumentException("Correo inválido");
+            }
+
+            String tipo = (String) cmbTipoDocumento.getSelectedItem();
+            String doc = txtNumeroDocumento.getText();
+            if (("DNI".equals(tipo) && !DNI_VALIDO.matcher(doc).matches())
+                    || ("NIE".equals(tipo) && !NIE_VALIDO.matcher(doc).matches())) {
+                throw new IllegalArgumentException("Número de documento inválido para " + tipo);
+            }
+            if (txtSoporteDocumento.getText().isBlank()) {
+                throw new IllegalArgumentException("Soporte documento obligatorio");
+            }
+        }
+
+        /**
+         * Serializa los datos de una persona a su bloque XML.
+         *
+         * @return XML de la persona actual.
+         */
+        String aXml() {
+            LocalDate fechaNac = dateToLocalDate(dateNacimiento.getDate());
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("      <persona>\n");
+            sb.append("        <rol>").append(cmbRol.getSelectedItem()).append("</rol>\n");
+            sb.append("        <nombre>").append(escapeXml(txtNombre.getText())).append("</nombre>\n");
+            sb.append("        <apellido1>").append(escapeXml(txtApellido1.getText())).append("</apellido1>\n");
+            sb.append("        <apellido2>").append(escapeXml(txtApellido2.getText())).append("</apellido2>\n");
+            sb.append("        <tipoDocumento>").append(cmbTipoDocumento.getSelectedItem()).append("</tipoDocumento>\n");
+            sb.append("        <numeroDocumento>").append(txtNumeroDocumento.getText()).append("</numeroDocumento>\n");
+            sb.append("        <soporteDocumento>").append(txtSoporteDocumento.getText()).append("</soporteDocumento>\n");
+            sb.append("        <fechaNacimiento>").append(fechaNac.format(ISO_DATE)).append("</fechaNacimiento>\n");
+            sb.append("        <nacionalidad>").append(escapeXml(txtNacionalidad.getText())).append("</nacionalidad>\n");
+            sb.append("        <sexo>").append(cmbSexo.getSelectedItem()).append("</sexo>\n");
+            sb.append("        <direccion>\n");
+            sb.append("          <direccion>").append(escapeXml(txtDireccion.getText())).append("</direccion>\n");
+            sb.append("          <direccionComplementaria>").append(escapeXml(txtDireccionComplementaria.getText())).append("</direccionComplementaria>\n");
+            sb.append("          <codigoMunicipio>").append(txtCodigoMunicipio.getText()).append("</codigoMunicipio>\n");
+            sb.append("          <codigoPostal>").append(txtCodigoPostal.getText()).append("</codigoPostal>\n");
+            sb.append("          <pais>ESP</pais>\n");
+            sb.append("        </direccion>\n");
+            sb.append("        <telefono>").append(txtTelefono.getText()).append("</telefono>\n");
+            sb.append("        <correo>").append(escapeXml(txtCorreo.getText())).append("</correo>\n");
+            String parentesco = (String) cmbParentesco.getSelectedItem();
+            if (parentesco == null || parentesco.isBlank()) {
+                sb.append("        <parentesco/>\n");
+            } else {
+                sb.append("        <parentesco>").append(parentesco).append("</parentesco>\n");
+            }
+            sb.append("      </persona>\n");
+            return sb.toString();
+        }
+    }
+
+    /**
+     * Selector de fecha compuesto por campo de texto y diálogo de selección.
+     */
+    private static class DatePickerField extends JPanel {
+        private final JTextField txtFecha = new JTextField();
+        private final JButton btnCalendario = new JButton("📅");
+        private final LocalDate minDate;
+        private final LocalDate maxDate;
+
+        /**
+         * Crea el selector con fecha inicial y límites de rango.
+         *
+         * @param initialDate fecha inicial mostrada.
+         * @param minDate fecha mínima permitida.
+         * @param maxDate fecha máxima permitida.
+         */
+        DatePickerField(LocalDate initialDate, LocalDate minDate, LocalDate maxDate) {
+            this.minDate = minDate;
+            this.maxDate = maxDate;
+            setLayout(new BorderLayout(6, 0));
+            txtFecha.setEditable(false);
+            txtFecha.setText(initialDate.format(ISO_DATE));
+            add(txtFecha, BorderLayout.CENTER);
+            add(btnCalendario, BorderLayout.EAST);
+            btnCalendario.addActionListener(e -> abrirSelectorFecha());
+        }
+
+        /**
+         * Abre un diálogo modal para elegir día, mes y año.
+         */
+        private void abrirSelectorFecha() {
+            JDialog dialog = new JDialog((Frame) null, "Seleccionar fecha", true);
+            dialog.setLayout(new BorderLayout(8, 8));
+
+            LocalDate parsed = LocalDate.parse(txtFecha.getText(), ISO_DATE);
+            final LocalDate base = parsed.isBefore(minDate) ? minDate : (parsed.isAfter(maxDate) ? maxDate : parsed);
+
+            int totalYears = maxDate.getYear() - minDate.getYear() + 1;
+            Integer[] years = new Integer[totalYears];
+            for (int i = 0; i < totalYears; i++) {
+                years[i] = minDate.getYear() + i;
+            }
+
+            JComboBox<Integer> cmbYear = new JComboBox<>(years);
+            JComboBox<Integer> cmbMonth = new JComboBox<>();
+            JComboBox<Integer> cmbDay = new JComboBox<>();
+
+            for (int i = 1; i <= 12; i++) {
+                cmbMonth.addItem(i);
+            }
+
+            cmbYear.setSelectedItem(base.getYear());
+            cmbMonth.setSelectedItem(base.getMonthValue());
+
+            final int[] daySelection = new int[]{base.getDayOfMonth()};
+
+            Runnable cargarMeses = () -> {
+                int y = (Integer) cmbYear.getSelectedItem();
+                cmbMonth.removeAllItems();
+                int minMonth = (y == minDate.getYear()) ? minDate.getMonthValue() : 1;
+                int maxMonth = (y == maxDate.getYear()) ? maxDate.getMonthValue() : 12;
+                for (int month = minMonth; month <= maxMonth; month++) {
+                    cmbMonth.addItem(month);
+                }
+                int preferred = Math.max(minMonth, Math.min((int) (cmbMonth.getItemCount() > 0 ? base.getMonthValue() : minMonth), maxMonth));
+                cmbMonth.setSelectedItem(preferred);
+            };
+
+            Runnable cargarDias = () -> {
+                cmbDay.removeAllItems();
+                int y = (Integer) cmbYear.getSelectedItem();
+                int m = (Integer) cmbMonth.getSelectedItem();
+                int minDay = (y == minDate.getYear() && m == minDate.getMonthValue()) ? minDate.getDayOfMonth() : 1;
+                int maxDay = (y == maxDate.getYear() && m == maxDate.getMonthValue())
+                        ? maxDate.getDayOfMonth() : LocalDate.of(y, m, 1).lengthOfMonth();
+                for (int d = minDay; d <= maxDay; d++) {
+                    cmbDay.addItem(d);
+                }
+                int selected = Math.max(minDay, Math.min(daySelection[0], maxDay));
+                cmbDay.setSelectedItem(selected);
+            };
+
+            cmbYear.addActionListener(e -> {
+                cargarMeses.run();
+                cargarDias.run();
+            });
+            cmbMonth.addActionListener(e -> cargarDias.run());
+            cmbDay.addActionListener(e -> {
+                if (cmbDay.getSelectedItem() != null) {
+                    daySelection[0] = (Integer) cmbDay.getSelectedItem();
+                }
+            });
+            cargarMeses.run();
+            cargarDias.run();
+
+            JPanel pickers = new JPanel(new GridLayout(2, 3, 8, 4));
+            pickers.add(new JLabel("Día"));
+            pickers.add(new JLabel("Mes"));
+            pickers.add(new JLabel("Año"));
+            pickers.add(cmbDay);
+            pickers.add(cmbMonth);
+            pickers.add(cmbYear);
+
+            JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            JButton btnOk = new JButton("Aceptar");
+            JButton btnCancel = new JButton("Cancelar");
+            actions.add(btnCancel);
+            actions.add(btnOk);
+
+            btnOk.addActionListener(e -> {
+                LocalDate selected = LocalDate.of((Integer) cmbYear.getSelectedItem(), (Integer) cmbMonth.getSelectedItem(), (Integer) cmbDay.getSelectedItem());
+                if (selected.isBefore(minDate) || selected.isAfter(maxDate)) {
+                    JOptionPane.showMessageDialog(dialog,
+                            "Fecha fuera de rango permitido (" + minDate + " a " + maxDate + ")");
+                    return;
+                }
+                txtFecha.setText(selected.format(ISO_DATE));
+                dialog.dispose();
+            });
+            btnCancel.addActionListener(e -> dialog.dispose());
+
+            dialog.add(pickers, BorderLayout.CENTER);
+            dialog.add(actions, BorderLayout.SOUTH);
+            dialog.pack();
+            dialog.setLocationRelativeTo(this);
+            dialog.setVisible(true);
+        }
+
+        /**
+         * Obtiene la fecha seleccionada normalizada dentro del rango permitido.
+         *
+         * @return fecha seleccionada como {@link Date}.
+         */
+        Date getDate() {
+            LocalDate localDate = LocalDate.parse(txtFecha.getText(), ISO_DATE);
+            if (localDate.isBefore(minDate)) {
+                localDate = minDate;
+            }
+            if (localDate.isAfter(maxDate)) {
+                localDate = maxDate;
+            }
+            return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        }
+    }
+
+    /**
+     * Aplica estilos base a botones y paneles principales.
+     */
+    private void aplicarEstilos() {
+        panelFormulario.setOpaque(true);
+        panelFormulario.setBackground(new Color(255, 255, 255, 150));
+        btnGenerar.setBackground(new Color(198, 156, 109));
+        btnGenerar.setForeground(Color.WHITE);
+        btnGenerar.setFocusPainted(false);
+
+        btnAgregarPersona.setBackground(new Color(80, 140, 180));
+        btnAgregarPersona.setForeground(Color.WHITE);
+        btnAgregarPersona.setFocusPainted(false);
+    }
+
+    /**
+     * Punto de entrada de la ventana Swing.
+     *
+     * @param args argumentos de ejecución.
      */
     public static void main(String[] args) {
-    java.awt.EventQueue.invokeLater(() -> {
-        new FormularioAlta().setVisible(true);
-    });
-}
-
-
-
-    // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JPanel FondoPanel;
-    private javax.swing.JButton btnGenerar;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel5;
-    private javax.swing.JPanel panelCentrador;
-    private javax.swing.JPanel panelFormulario;
-    private javax.swing.JTextField txtApellidos;
-    private javax.swing.JTextField txtDocumento;
-    private javax.swing.JTextField txtEntrada;
-    private javax.swing.JTextField txtNombre;
-    private javax.swing.JTextField txtSalida;
-    private javax.swing.JLabel txtTitulo;
-    // End of variables declaration//GEN-END:variables
-
-    private void aplicarEstilos() {
-
-    // ===== TÍTULO =====
-    txtTitulo.setForeground(java.awt.Color.BLACK);
-    txtTitulo.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-    txtTitulo.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 22));
-
-    // ===== LABELS =====
-    jLabel1.setForeground(java.awt.Color.BLACK);
-    jLabel2.setForeground(java.awt.Color.BLACK);
-    jLabel3.setForeground(java.awt.Color.BLACK);
-    jLabel4.setForeground(java.awt.Color.BLACK);
-    jLabel5.setForeground(java.awt.Color.BLACK);
-
-    jLabel1.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 13));
-    jLabel2.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 13));
-    jLabel3.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 13));
-    jLabel4.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 13));
-    jLabel5.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 13));
-
-    // ===== CAMPOS DE TEXTO =====
-    txtNombre.setBackground(new java.awt.Color(255, 255, 255));
-    txtApellidos.setBackground(new java.awt.Color(255, 255, 255));
-    txtDocumento.setBackground(new java.awt.Color(255, 255, 255));
-    txtEntrada.setBackground(new java.awt.Color(255, 255, 255));
-    txtSalida.setBackground(new java.awt.Color(255, 255, 255));
-
-    // ===== BOTÓN =====
-    btnGenerar.setBackground(new java.awt.Color(198, 156, 109)); // dorado hotel
-    btnGenerar.setForeground(java.awt.Color.WHITE);
-    btnGenerar.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 14));
-    btnGenerar.setFocusPainted(false);
-    
-    panelFormulario.setBackground(new java.awt.Color(255, 255, 255, 210));
-    panelFormulario.setBorder(
-        javax.swing.BorderFactory.createEmptyBorder(20, 20, 20, 20)
-    );
-    panelFormulario.setOpaque(true);
-
+        SwingUtilities.invokeLater(() -> new FormularioAlta().setVisible(true));
     }
-    
 }
